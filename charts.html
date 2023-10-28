@@ -1,0 +1,71 @@
+﻿---
+layout: default
+title: Patient Monitoring System
+---
+
+<div id="chart_div"></div>
+
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script type="text/javascript">
+    google.charts.load('current', { 'packages': ['line'] });
+    google.charts.setOnLoadCallback(drawChart);
+
+    var data;
+    var chart;
+    var options;
+
+    function drawChart() {
+        data = new google.visualization.DataTable();
+        data.addColumn('number', 'Time');
+        data.addColumn('number', 'Blood Saturation');
+        data.addColumn('number', 'Heartbeat');
+        data.addColumn('number', 'ECG');
+
+        data.addRows([
+            // Sample data
+            [1, 100, 80, 0],
+            [2, 95, 75, 10],
+            // ... (Add your data here)
+        ]);
+
+        options = {
+            chart: {
+                title: 'Patient Monitoring System',
+                subtitle: 'Real-time data visualization'
+            },
+            width: 900,
+            height: 500
+        };
+
+        chart = new google.charts.Line(document.getElementById('chart_div'));
+
+        chart.draw(data, google.charts.Line.convertOptions(options));
+    }
+
+    function updateData() {
+        var xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                var response = JSON.parse(this.responseText);
+                var feeds = response.feeds;
+
+                var rows = [];
+                for (var i = 0; i < feeds.length; i++) {
+                    var time = i;
+                    var saturation = parseFloat(feeds[i].field1);
+                    var heartbeat = parseFloat(feeds[i].field2);
+                    var ecg = parseFloat(feeds[i].field3);
+                    rows.push([time, saturation, heartbeat, ecg]);
+                }
+
+                data.addRows(rows);
+                chart.draw(data, google.charts.Line.convertOptions(options));
+            }
+        };
+
+        xhr.open("GET", "https://api.thingspeak.com/channels/2312064/feeds.json?api_key=A5I3V8HM4YZ711XR&results=10", true);
+        xhr.send();
+    }
+
+    setInterval(updateData, 40);
+</script>
